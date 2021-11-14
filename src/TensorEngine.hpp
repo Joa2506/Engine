@@ -21,7 +21,7 @@ struct Configurations {
     //GPU device index number, might be useful for more Tegras in the future
     int deviceIndex = 0;
 
-}typedef config;
+};
 
 class TensorEngine 
 {
@@ -38,7 +38,7 @@ class TensorEngine
 
         bool fileExists(string FILENAME);
 
-        unique_ptr<nvinfer1::ICudaEngine> m_cudaEgine = nullptr;
+        unique_ptr<nvinfer1::ICudaEngine> m_engine = nullptr;
         unique_ptr<nvinfer1::IExecutionContext> m_context = nullptr;
 
         Logger m_logger;
@@ -50,6 +50,6 @@ class TensorEngine
         
         string m_engineName;
 
-        const config& m_config;
+        const Configurations& m_config;
 
 };

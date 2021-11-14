@@ -9,12 +9,17 @@ bool TensorEngine::fileExists(string FILENAME)
     return f.good();
 }
 
+TensorEngine::TensorEngine(const Configurations &config) : m_config(config) {}
+
 bool TensorEngine::build(string ONNXFILENAME)
 {
-    //Get engine configurations
-
+    
     //Check if engine file already exists
-
+    if(fileExists(ONNXFILENAME))
+    {
+        cout << "Engine already exists" << endl;
+        return true;
+    }
     //no engine found create new
     cout << "Creating engine..." << endl;
     auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(m_logger));
@@ -107,11 +112,43 @@ bool TensorEngine::build(string ONNXFILENAME)
 
     cout << "The engine has been built and saved to disk successfully" << endl;
 
-    
+    return true;
+
 }
 bool TensorEngine::loadNetwork()
 {
+    ifstream file(m_engineName, ios::binary | ios::ate);
+    streamsize size = file.tellg();
+    file.seekg(0, ios::beg);
 
+    vector<char> buffer(size);
+    if(!file.read(buffer.data(), size))
+    {
+        cout << "Could not read the network from disk" << endl;
+        return false;
+    }
+    //Creates a runtime object for running inference
+    unique_ptr<IRuntime> runtime{createInferRuntime(m_logger)};
+
+    //TODO: Set device index
+
+    //Let's create the engine
+    m_engine = unique_ptr<nvinfer1::ICudaEngine>(runtime->deserializeCudaEngine(buffer.data(), buffer.size()));
+    if(!m_engine)
+    {
+        cout << "Creating the cuda engine failed" << endl;
+        return false;
+    }
+
+    m_context = unique_ptr<nvinfer1::IExecutionContext>(m_engine->createExecutionContext());
+    if(!m_context)
+    {
+        cout << "Creating the execution context failed" << endl;
+        return false;
+    }
+
+    //We loaded the network successfully
+    return true;
 }
 bool TensorEngine::inference()
 {
