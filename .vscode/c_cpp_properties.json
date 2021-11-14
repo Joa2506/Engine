@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/local/cuda-10.2/include"
+                "/usr/local/cuda-10.2/include",
+                "/usr/src/tensorrt/samples/common"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
