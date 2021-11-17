@@ -15,7 +15,7 @@ bool TensorEngine::build(string ONNXFILENAME)
 {
     
     //Check if engine file already exists
-    if(fileExists(ONNXFILENAME))
+    if(fileExists(m_engineName))
     {
         cout << "Engine already exists" << endl;
         return true;
@@ -152,5 +152,7 @@ bool TensorEngine::loadNetwork()
 }
 bool TensorEngine::inference()
 {
+    auto dims = m_engine->getBindingDimensions(0);
+    auto outputL = m_engine->getBindingDimensions(1).d[1];
 
 }
