@@ -24,3 +24,14 @@
 # Compiled static libraries
 *.lai
 *.la
+
+#executables
+*.exe
+*.out
+*.app
+
+build*
+cmake-build*
+.idea/
+
+*onnx
