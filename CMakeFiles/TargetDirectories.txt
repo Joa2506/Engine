@@ -1,3 +1,0 @@
-/home/joakimfj/Documents/TensorRt/Hello_World/CMakeFiles/rebuild_cache.dir
-/home/joakimfj/Documents/TensorRt/Hello_World/CMakeFiles/app.dir
-/home/joakimfj/Documents/TensorRt/Hello_World/CMakeFiles/edit_cache.dir
