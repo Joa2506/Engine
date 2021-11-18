@@ -34,4 +34,6 @@ build*
 cmake-build*
 .idea/
 
+Makefile
+
 *onnx
