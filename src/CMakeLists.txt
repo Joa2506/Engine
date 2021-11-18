@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.10)
 #links libraries
 #target_link_libraries(${TARGET_NAME} nvonnxparser)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda" )
+set(TensorRT_DIR "/usr/src/tensorrt")
 find_package(CUDA)
 message("-- CUDA version: ${CUDA_VERSION}")
 
@@ -29,12 +30,17 @@ if(CUDA_VERSION_MAJOR GREATER 9)
 	)
 endif()
 
+set(TensorRT_DIR "/usr/src/tensorrt")
+
 # specify the executable and corresponding source file
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CUDA_INCLUDE_DIRS})  #This seems to have added the cuda_runtime api.
-add_executable(app main.cpp Trt.cpp)
+include_directories(${TensorRT_INCLUDE_DIR})
+include_directories(${TensorRT_DIR}/samples/common)
+add_executable(app main.cpp TensorEngine.cpp)
 
 #links libraries
 target_link_libraries(app nvonnxparser)
 target_link_libraries(app nvinfer${NVINFER_LIBRARY})
+target_link_libraries(app )
 target_link_libraries(app ${CUDA_LIBRARIES})

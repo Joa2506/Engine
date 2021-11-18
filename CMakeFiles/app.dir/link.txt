@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/app.dir/main.cpp.o CMakeFiles/app.dir/TensorEngine.cpp.o  -o app -lnvonnxparser -lnvinfer /usr/local/cuda/lib64/libcudart_static.a -lpthread -ldl /usr/lib/aarch64-linux-gnu/librt.so 

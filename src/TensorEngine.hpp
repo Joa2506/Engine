@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#define ONNXFILE_1 "/home/joakimfj/Documents/TensorRt/mnist2/model.onnx"
+#define ONNXFILE_2 "/home/joakimfj/Documents/TensorRt/Model/models/vision/object_detection_segmentation/tiny-yolov3/model/tiny-yolov3-11.onnx"
 struct Configurations {
     //Using 16 point floats for inference
     bool FP16 = false;
@@ -17,7 +19,7 @@ struct Configurations {
     // Maximum allowed batch size
     int32_t maxBatchSize = 16;
     //Max GPU memory allowed for the model.
-    int maxWorkspaceSize = 4000000000;
+    int maxWorkspaceSize = 16000000;
     //GPU device index number, might be useful for more Tegras in the future
     int deviceIndex = 0;
 
@@ -33,10 +35,12 @@ class TensorEngine
         bool loadNetwork();
         //Runs inference on the network
         bool inference();
+        //Make engine name
 
     private:
 
         bool fileExists(string FILENAME);
+        string serializeEngineName(const Configurations& config);
 
         unique_ptr<nvinfer1::ICudaEngine> m_engine = nullptr;
         unique_ptr<nvinfer1::IExecutionContext> m_context = nullptr;

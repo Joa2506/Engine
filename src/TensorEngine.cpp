@@ -1,20 +1,45 @@
 #include "TensorEngine.hpp"
 #include <NvOnnxParser.h>
 #include <NvOnnxConfig.h>
-//#include <iostream>
+#include <iostream>
 #include <fstream>
 bool TensorEngine::fileExists(string FILENAME)
 {
     ifstream f(FILENAME.c_str());
     return f.good();
 }
+string TensorEngine::serializeEngineName(const Configurations& config) 
+{
+    string name = "trt.engine";
 
+    if(config.FP16)
+    {
+        name += ".fp16";
+    }
+    else
+    {
+        name += "fp32";
+    }
+    name += "." + to_string(config.maxBatchSize); + ".";
+    for (int i = 0; i < m_config.optBatchSize.size(); ++i)
+    {
+        name += to_string(m_config.optBatchSize[i]);
+        if(i != m_config.optBatchSize.size() - 1)
+        {
+            name += "_";
+        } 
+    }
+     
+    return name;
+
+}
 TensorEngine::TensorEngine(const Configurations &config) : m_config(config) {}
 
 bool TensorEngine::build(string ONNXFILENAME)
 {
     
     //Check if engine file already exists
+    m_engineName = serializeEngineName(m_config);
     if(fileExists(m_engineName))
     {
         cout << "Engine already exists" << endl;
@@ -83,7 +108,7 @@ bool TensorEngine::build(string ONNXFILENAME)
     IOptimizationProfile *defaultProfile = builder->createOptimizationProfile();
     defaultProfile->setDimensions(inputName, OptProfileSelector::kMIN, Dims4(1, inputChannel, inputHeight, inputWidth));
     defaultProfile->setDimensions(inputName, OptProfileSelector::kOPT, Dims4(1, inputChannel, inputHeight, inputWidth));
-    defaultProfile->setDimensions(inputName, OptProfileSelector::kMAX, Dims4(m_config.maxBatchSize, inputChannel, inputHeight, inputWidth));
+    defaultProfile->setDimensions(inputName, OptProfileSelector::kMAX, Dims4(1, inputChannel, inputHeight, inputWidth));
     config->addOptimizationProfile(defaultProfile);
 
     config->setMaxWorkspaceSize(m_config.maxWorkspaceSize);
@@ -109,7 +134,7 @@ bool TensorEngine::build(string ONNXFILENAME)
 
     //Todo write the engine to disk
     ofstream outfile(m_engineName, ofstream::binary);
-
+    outfile.write(reinterpret_cast<const char*>(serializedModel->data()), serializedModel->size());
     cout << "The engine has been built and saved to disk successfully" << endl;
 
     return true;
