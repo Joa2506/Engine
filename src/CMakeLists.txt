@@ -37,10 +37,10 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CUDA_INCLUDE_DIRS})  #This seems to have added the cuda_runtime api.
 include_directories(${TensorRT_INCLUDE_DIR})
 include_directories(${TensorRT_DIR}/samples/common)
-add_executable(app main.cpp TensorEngine.cpp)
+add_executable(engine main.cpp TensorEngine.cpp)
 
 #links libraries
-target_link_libraries(app nvonnxparser)
-target_link_libraries(app nvinfer${NVINFER_LIBRARY})
-target_link_libraries(app )
-target_link_libraries(app ${CUDA_LIBRARIES})
+target_link_libraries(engine nvonnxparser)
+target_link_libraries(engine nvinfer${NVINFER_LIBRARY})
+target_link_libraries(engine )
+target_link_libraries(engine ${CUDA_LIBRARIES})
