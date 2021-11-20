@@ -10,7 +10,8 @@
 using namespace std;
 
 #define ONNXFILE_1 "/home/joakimfj/Documents/TensorRt/mnist2/model.onnx"
-#define ONNXFILE_2 "/home/joakimfj/Documents/TensorRt/Model/models/vision/object_detection_segmentation/tiny-yolov3/model/tiny-yolov3-11.onnx"
+#define ONNXFILE_2 "yolov3-10.onnx"
+
 struct Configurations {
     //Using 16 point floats for inference
     bool FP16 = false;
@@ -28,7 +29,10 @@ struct Configurations {
 class TensorEngine 
 {
     public:
+        //constructor
         TensorEngine(const Configurations& config);
+        //destructor
+        ~TensorEngine();
         //Builds the network from the onnx file
         bool build(string ONNXFILENAME);
         //Loads and prepares the network for inference
@@ -41,18 +45,26 @@ class TensorEngine
 
         bool fileExists(string FILENAME);
         string serializeEngineName(const Configurations& config);
+        bool processInput(const samplesCommon::BufferManager& buffer);
 
-        unique_ptr<nvinfer1::ICudaEngine> m_engine = nullptr;
-        unique_ptr<nvinfer1::IExecutionContext> m_context = nullptr;
+        shared_ptr<nvinfer1::ICudaEngine> m_engine = nullptr;
+        shared_ptr<nvinfer1::IExecutionContext> m_context = nullptr;
+        const char* m_inputName;
+        const char* m_outputName;
 
         Logger m_logger;
 
         samplesCommon::ManagedBuffer m_inputBuffer;
         samplesCommon::ManagedBuffer m_outputBuffer;
 
+        Dims m_inputDims;
+        Dims m_oututDims;
+
         int batchSize = 0;
         
         string m_engineName;
+
+        cudaStream_t m_cudaStream = nullptr;
 
         const Configurations& m_config;
 

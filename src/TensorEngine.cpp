@@ -18,7 +18,7 @@ string TensorEngine::serializeEngineName(const Configurations& config)
     }
     else
     {
-        name += "fp32";
+        name += ".fp32";
     }
     name += "." + to_string(config.maxBatchSize); + ".";
     for (int i = 0; i < m_config.optBatchSize.size(); ++i)
@@ -34,6 +34,10 @@ string TensorEngine::serializeEngineName(const Configurations& config)
 
 }
 TensorEngine::TensorEngine(const Configurations &config) : m_config(config) {}
+TensorEngine::~TensorEngine()
+{
+
+}
 
 bool TensorEngine::build(string ONNXFILENAME)
 {
@@ -83,6 +87,11 @@ bool TensorEngine::build(string ONNXFILENAME)
         throw runtime_error("Was not able to read the engine file");
     }
     auto parsed = parser->parse(buffer.data(), buffer.size());
+    //auto parsed = parser->parseFromFile(ONNXFILE_2, (int)ILogger::Severity::kWARNING);
+    for (int32_t i = 0; i < parser->getNbErrors(); ++i)
+    {
+        cout << parser->getError(i)->desc() << endl;
+    }
     if(!parsed)
     {
         cout << "Parsing failed" << endl;
@@ -91,11 +100,13 @@ bool TensorEngine::build(string ONNXFILENAME)
     //Getting input, output, height, weight and channels
     const auto input = network->getInput(0);
     const auto output = network->getOutput(0);
-    const auto inputName = input->getName();
-    const auto inputDims = input->getDimensions();
-    int32_t inputChannel = inputDims.d[1];
-    int32_t inputHeight = inputDims.d[2];
-    int32_t inputWidth = inputDims.d[3];
+    m_inputName = input->getName();
+    m_outputName = output->getName();
+    printf("%s : %s\n", m_inputName, m_outputName);
+    m_inputDims = input->getDimensions();
+    int32_t inputChannel = m_inputDims.d[1];
+    int32_t inputHeight = m_inputDims.d[2];
+    int32_t inputWidth = m_inputDims.d[3];
 
     auto config = unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
     if(!config)
@@ -106,9 +117,9 @@ bool TensorEngine::build(string ONNXFILENAME)
 
     //Specifying the optimization profile
     IOptimizationProfile *defaultProfile = builder->createOptimizationProfile();
-    defaultProfile->setDimensions(inputName, OptProfileSelector::kMIN, Dims4(1, inputChannel, inputHeight, inputWidth));
-    defaultProfile->setDimensions(inputName, OptProfileSelector::kOPT, Dims4(1, inputChannel, inputHeight, inputWidth));
-    defaultProfile->setDimensions(inputName, OptProfileSelector::kMAX, Dims4(1, inputChannel, inputHeight, inputWidth));
+    defaultProfile->setDimensions(m_inputName, OptProfileSelector::kMIN, Dims4(1, inputChannel, inputHeight, inputWidth));
+    defaultProfile->setDimensions(m_inputName, OptProfileSelector::kOPT, Dims4(1, inputChannel, inputHeight, inputWidth));
+    defaultProfile->setDimensions(m_inputName, OptProfileSelector::kMAX, Dims4(1, inputChannel, inputHeight, inputWidth));
     config->addOptimizationProfile(defaultProfile);
 
     config->setMaxWorkspaceSize(m_config.maxWorkspaceSize);
@@ -132,7 +143,7 @@ bool TensorEngine::build(string ONNXFILENAME)
         return false;
     }
 
-    //Todo write the engine to disk
+    //write the engine to disk
     ofstream outfile(m_engineName, ofstream::binary);
     outfile.write(reinterpret_cast<const char*>(serializedModel->data()), serializedModel->size());
     cout << "The engine has been built and saved to disk successfully" << endl;
@@ -158,26 +169,55 @@ bool TensorEngine::loadNetwork()
     //TODO: Set device index
 
     //Let's create the engine
-    m_engine = unique_ptr<nvinfer1::ICudaEngine>(runtime->deserializeCudaEngine(buffer.data(), buffer.size()));
+    m_engine = shared_ptr<nvinfer1::ICudaEngine>(runtime->deserializeCudaEngine(buffer.data(), buffer.size()));
     if(!m_engine)
     {
         cout << "Creating the cuda engine failed" << endl;
         return false;
     }
 
-    m_context = unique_ptr<nvinfer1::IExecutionContext>(m_engine->createExecutionContext());
+
+    m_context = shared_ptr<nvinfer1::IExecutionContext>(m_engine->createExecutionContext());
     if(!m_context)
     {
         cout << "Creating the execution context failed" << endl;
         return false;
     }
 
+
+    auto cudaSucc = cudaStreamCreate(&m_cudaStream);
+    if(cudaSucc != 0)
+    {
+        //printf("Not able to create cudaStream");
+        throw runtime_error("Unable to create cuda stream");
+    }
     //We loaded the network successfully
     return true;
 }
 bool TensorEngine::inference()
 {
-    auto dims = m_engine->getBindingDimensions(0);
-    auto outputL = m_engine->getBindingDimensions(1).d[1];
+    //  auto dims = m_engine->getBindingDimensions(0);
+    //  auto outputL = m_engine->getBindingDimensions(1).d[1];
 
+
+    int32_t inputIndex = m_engine->getBindingIndex(m_inputName);
+    int32_t outputIndex = m_engine->getBindingIndex(m_outputName);
+
+    
+
+    //buffers.copyInputToDevice();
+    // bool status = m_context->executeV2(buffers.getDeviceBindings().data());
+    // if(!status)
+    // {
+    //     return false;
+    // }
+
+    // buffers.copyOutputToHost();
+
+    return true;
+}
+bool TensorEngine::processInput(const samplesCommon::BufferManager& buffer)
+{
+    return true;
+    
 }

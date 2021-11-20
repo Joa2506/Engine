@@ -1,5 +1,4 @@
 #Prerequisites
-#Prerequisites
 *.d
 
 # Compilied Object Files
@@ -31,11 +30,21 @@
 *.app
 
 build*
+
+#Cmake stuff
 cmake-build*
+CMakeCache.txt
+*.cmake
+/CMakeFiles
+
+#VSCode stuff
+.vscode
+
 .idea/
 
+#The compiled engine file
 engine
 
 Makefile
 
-*onnx
+*.onnx
