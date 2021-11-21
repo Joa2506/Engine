@@ -42,5 +42,5 @@ add_executable(engine main.cpp TensorEngine.cpp)
 #links libraries
 target_link_libraries(engine nvonnxparser)
 target_link_libraries(engine nvinfer${NVINFER_LIBRARY})
-target_link_libraries(engine )
+target_link_libraries(engine ${TensorRT_DIR}/samples/common/logger.cpp)
 target_link_libraries(engine ${CUDA_LIBRARIES})

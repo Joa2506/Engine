@@ -11,6 +11,7 @@ using namespace std;
 
 #define ONNXFILE_1 "/home/joakimfj/Documents/TensorRt/mnist2/model.onnx"
 #define ONNXFILE_2 "yolov3-10.onnx"
+#define PGM_LOC "/usr/src/tensorrt/data/mnist"
 
 struct Configurations {
     //Using 16 point floats for inference
@@ -63,6 +64,9 @@ class TensorEngine
         int batchSize = 0;
         
         string m_engineName;
+
+        //Location of the pgm files
+        vector<string> m_location;
 
         cudaStream_t m_cudaStream = nullptr;
 

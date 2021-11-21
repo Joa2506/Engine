@@ -17,11 +17,11 @@ int main()
     {
         throw runtime_error("Could not load network");
     }
-    // succ = engine.inference();
-    // if(!succ)
-    // {
-    //     throw runtime_error("Could not run inference");
-    // }
+    succ = engine.inference();
+    if(!succ)
+    {
+        throw runtime_error("Could not run inference");
+    }
     printf("End of code\n");
     return 0;
 }

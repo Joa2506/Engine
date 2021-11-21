@@ -3,6 +3,8 @@
 #include <NvOnnxConfig.h>
 #include <iostream>
 #include <fstream>
+#include <logger.h>
+#include </usr/src/tensorrt/samples/common/logger.h>
 bool TensorEngine::fileExists(string FILENAME)
 {
     ifstream f(FILENAME.c_str());
@@ -185,39 +187,70 @@ bool TensorEngine::loadNetwork()
     }
 
 
-    auto cudaSucc = cudaStreamCreate(&m_cudaStream);
-    if(cudaSucc != 0)
-    {
-        //printf("Not able to create cudaStream");
-        throw runtime_error("Unable to create cuda stream");
-    }
+    // auto cudaSucc = cudaStreamCreate(&m_cudaStream);
+    // if(cudaSucc != 0)
+    // {
+    //     //printf("Not able to create cudaStream");
+    //     throw runtime_error("Unable to create cuda stream");
+    // }
     //We loaded the network successfully
     return true;
 }
+//Location of the pgm files /usr/src/tensorrt/data/mnist
 bool TensorEngine::inference()
 {
     //  auto dims = m_engine->getBindingDimensions(0);
     //  auto outputL = m_engine->getBindingDimensions(1).d[1];
+    samplesCommon::BufferManager buffers(m_engine);
+    if(!processInput(buffers))
+    {
+        cout << "Could not process the input";
+        return false;
+    }
+
+    buffers.copyInputToDevice();
+
+    bool succ = m_context->executeV2(buffers.getDeviceBindings().data());
+    if(!succ)
+    {
+        cout << "Running inference failed";
+        return false;
+    }
+    buffers.copyOutputToHost();
 
 
-    int32_t inputIndex = m_engine->getBindingIndex(m_inputName);
-    int32_t outputIndex = m_engine->getBindingIndex(m_outputName);
-
-    
-
-    //buffers.copyInputToDevice();
-    // bool status = m_context->executeV2(buffers.getDeviceBindings().data());
-    // if(!status)
-    // {
-    //     return false;
-    // }
-
-    // buffers.copyOutputToHost();
 
     return true;
 }
 bool TensorEngine::processInput(const samplesCommon::BufferManager& buffer)
 {
+
+    const int inputH = m_inputDims.d[2];
+    const int inputW = m_inputDims.d[3];
+
+    srand(unsigned(time(nullptr)));
+    vector<uint8_t> filedata(inputH * inputW);
+    m_location.push_back("/usr/src/tensorrt/data/mnist");
+    int number = rand() % 10;
+    
+    readPGMFile(locateFile(to_string(number) + ".pgm", m_location), filedata.data(), inputH, inputW);
+    printf("%d\n", number);
+    sample::gLogInfo << "Input: " << std::endl;
+    for (size_t i = 0; i < inputH * inputW; i++)
+    {
+        sample::gLogInfo << (" .:-=+*#%@"[filedata[i] / 26]) << (((i+1) % inputW) ? "" : "\n");
+    }
+    sample::gLogInfo << std::endl;
+    printf("%s", m_inputName);
+    float *hostDataBuffer = static_cast<float*>(buffer.getHostBuffer("Input3"));
+    for (size_t i = 0; i < inputH * inputW; i++)
+    {
+        hostDataBuffer[i] = 1.0 - float(filedata[i] / 255.0);
+    }
+    
+    
     return true;
     
 }
+
+
