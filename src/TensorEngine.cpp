@@ -178,7 +178,18 @@ bool TensorEngine::loadNetwork()
         return false;
     }
 
+    printf("\n\nBinding name NAME: %s\n\n", m_engine->getBindingName(1));
+    printf("Binding index output: %d\n\n", m_engine->getBindingIndex("Plus214_Output_0"));
+    printf("m_inputname == %s\n", m_inputName);
+    m_inputName = m_engine->getBindingName(0);
+    m_outputName = m_engine->getBindingName(1);
+    
+    m_inputDims = m_engine->getBindingDimensions(0);
+    m_oututDims = m_engine->getBindingDimensions(1);
 
+    printf("m_inputname == %s\n", m_inputName);
+    printf("m_outputname == %s\n", m_outputName);
+    
     m_context = shared_ptr<nvinfer1::IExecutionContext>(m_engine->createExecutionContext());
     if(!m_context)
     {
@@ -186,21 +197,12 @@ bool TensorEngine::loadNetwork()
         return false;
     }
 
-
-    // auto cudaSucc = cudaStreamCreate(&m_cudaStream);
-    // if(cudaSucc != 0)
-    // {
-    //     //printf("Not able to create cudaStream");
-    //     throw runtime_error("Unable to create cuda stream");
-    // }
-    //We loaded the network successfully
     return true;
 }
 //Location of the pgm files /usr/src/tensorrt/data/mnist
 bool TensorEngine::inference()
 {
-    //  auto dims = m_engine->getBindingDimensions(0);
-    //  auto outputL = m_engine->getBindingDimensions(1).d[1];
+
     samplesCommon::BufferManager buffers(m_engine);
     if(!processInput(buffers))
     {
@@ -218,10 +220,16 @@ bool TensorEngine::inference()
     }
     buffers.copyOutputToHost();
 
+    if(!verifyOutput(buffers))
+    {
+        cout << "Sap doc" << endl;
+        return false;
+    }
 
 
     return true;
 }
+//Taken from the sample
 bool TensorEngine::processInput(const samplesCommon::BufferManager& buffer)
 {
 
@@ -231,26 +239,59 @@ bool TensorEngine::processInput(const samplesCommon::BufferManager& buffer)
     srand(unsigned(time(nullptr)));
     vector<uint8_t> filedata(inputH * inputW);
     m_location.push_back("/usr/src/tensorrt/data/mnist");
-    int number = rand() % 10;
+    m_pgmNumber = rand() % 10;
     
-    readPGMFile(locateFile(to_string(number) + ".pgm", m_location), filedata.data(), inputH, inputW);
-    printf("%d\n", number);
-    sample::gLogInfo << "Input: " << std::endl;
+    readPGMFile(locateFile(to_string(m_pgmNumber) + ".pgm", m_location), filedata.data(), inputH, inputW);
+    sample::gLogInfo << "Input:" << std::endl;
     for (size_t i = 0; i < inputH * inputW; i++)
     {
         sample::gLogInfo << (" .:-=+*#%@"[filedata[i] / 26]) << (((i+1) % inputW) ? "" : "\n");
     }
     sample::gLogInfo << std::endl;
-    printf("%s", m_inputName);
-    float *hostDataBuffer = static_cast<float*>(buffer.getHostBuffer("Input3"));
+    float *hostDataBuffer = static_cast<float*>(buffer.getHostBuffer(m_inputName));
     for (size_t i = 0; i < inputH * inputW; i++)
     {
         hostDataBuffer[i] = 1.0 - float(filedata[i] / 255.0);
     }
     
     
-    return true;
-    
+    return true;    
 }
+//Taken from the sample
+bool TensorEngine::verifyOutput(const samplesCommon::BufferManager& buffer)
+{
+    float* output = static_cast<float*>(buffer.getHostBuffer(m_outputName));
+    float val{0.0f};
+    int idx{0};
+
+    //calculate Softmax
+    float sum{0.0f};
+    for (size_t i = 0; i < m_oututDims.d[1]; i++)
+    {
+        output[i] = exp(output[i]);
+        sum += output[i];
+    }
+    printf("Output size%d\n\n", m_oututDims.d[1]);
+    sample::gLogInfo << "Output: " << endl;
+    for (size_t i = 0; i < m_oututDims.d[1]; i++)
+    {
+        output[i] /= sum;
+        val = max(val, output[i]);
+        if(val == output[i])
+        {
+            idx = i;
+        }
+
+        sample::gLogInfo << "Prob" << " " << fixed << setw(5) << setprecision(4) << output[i]
+                         << " "
+                         << "Class " << i << ": " << string(int(floor(output[i] * 10 + 0.5f)), '*')
+                         << endl;   
+    }
+    sample::gLogInfo << std::endl;
+
+    return idx == m_pgmNumber && val > 0.9f;
+
+}
+
 
 

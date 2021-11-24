@@ -47,6 +47,7 @@ class TensorEngine
         bool fileExists(string FILENAME);
         string serializeEngineName(const Configurations& config);
         bool processInput(const samplesCommon::BufferManager& buffer);
+        bool verifyOutput(const samplesCommon::BufferManager& buffer);
 
         shared_ptr<nvinfer1::ICudaEngine> m_engine = nullptr;
         shared_ptr<nvinfer1::IExecutionContext> m_context = nullptr;
@@ -62,7 +63,7 @@ class TensorEngine
         Dims m_oututDims;
 
         int batchSize = 0;
-        
+        int m_pgmNumber = 0;
         string m_engineName;
 
         //Location of the pgm files
