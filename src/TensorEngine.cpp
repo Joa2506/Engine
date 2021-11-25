@@ -127,6 +127,8 @@ bool TensorEngine::build(string ONNXFILENAME)
     config->setMaxWorkspaceSize(m_config.maxWorkspaceSize);
     //TODO: Make different optimization profiles prossible
     
+    //Set GPU fallback
+
     //Making a cuda stream for the profile
     auto cudaStream = samplesCommon::makeCudaStream();
     if(!cudaStream)
@@ -135,8 +137,11 @@ bool TensorEngine::build(string ONNXFILENAME)
         return false;
     }
     //Setting the profile stream
-    config->setProfileStream(*cudaStream);
-
+    // config->setProfileStream(*cudaStream);
+    // config->setFlag(BuilderFlag::kGPU_FALLBACK);
+    // config->setFlag(BuilderFlag::kFP16);
+    // config->setDefaultDeviceType(DeviceType::kDLA);
+    // config->setDLACore(1);
     //Creating the serialized model of the engine
     unique_ptr<IHostMemory> serializedModel{builder->buildSerializedNetwork(*network, *config)};
     if(!serializedModel)
@@ -145,6 +150,10 @@ bool TensorEngine::build(string ONNXFILENAME)
         return false;
     }
 
+    /*ADD DLA 
+    */
+   
+    
     //write the engine to disk
     ofstream outfile(m_engineName, ofstream::binary);
     outfile.write(reinterpret_cast<const char*>(serializedModel->data()), serializedModel->size());
@@ -196,7 +205,7 @@ bool TensorEngine::loadNetwork()
         cout << "Creating the execution context failed" << endl;
         return false;
     }
-
+    
     return true;
 }
 //Location of the pgm files /usr/src/tensorrt/data/mnist

@@ -24,6 +24,8 @@ struct Configurations {
     int maxWorkspaceSize = 16000000;
     //GPU device index number, might be useful for more Tegras in the future
     int deviceIndex = 0;
+    // DLA
+    int dlaCore = 0;
 
 };
 
