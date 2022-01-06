@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <logger.h>
+#include <time.h>
 #include </usr/src/tensorrt/samples/common/logger.h>
 bool TensorEngine::fileExists(string FILENAME)
 {
@@ -137,7 +138,7 @@ bool TensorEngine::build(string ONNXFILENAME)
         return false;
     }
     //Setting the profile stream
-    // config->setProfileStream(*cudaStream);
+    config->setProfileStream(*cudaStream);
     // config->setFlag(BuilderFlag::kGPU_FALLBACK);
     // config->setFlag(BuilderFlag::kFP16);
     // config->setDefaultDeviceType(DeviceType::kDLA);
@@ -211,7 +212,8 @@ bool TensorEngine::loadNetwork()
 //Location of the pgm files /usr/src/tensorrt/data/mnist
 bool TensorEngine::inference()
 {
-
+    clock_t start, end;
+    double time;
     samplesCommon::BufferManager buffers(m_engine);
     if(!processInput(buffers))
     {
@@ -220,13 +222,14 @@ bool TensorEngine::inference()
     }
 
     buffers.copyInputToDevice();
-
+    start = clock();
     bool succ = m_context->executeV2(buffers.getDeviceBindings().data());
     if(!succ)
     {
         cout << "Running inference failed";
         return false;
     }
+    end = clock();
     buffers.copyOutputToHost();
 
     if(!verifyOutput(buffers))
@@ -235,7 +238,8 @@ bool TensorEngine::inference()
         return false;
     }
 
-
+    time = ((double)end - double(start))/CLOCKS_PER_SEC;
+    printf("Time of inference: %f\n", time);
     return true;
 }
 //Taken from the sample

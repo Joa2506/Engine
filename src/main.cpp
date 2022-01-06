@@ -30,7 +30,7 @@ int main()
         throw runtime_error("Could not run inference");
     }
     time = ((double)end - double(start))/CLOCKS_PER_SEC;
-    printf("Time of inference: %f\n", time);
+    printf("Time of inference process: %f\n", time);
     printf("End of code\n");
     return 0;
 }
